@@ -6,12 +6,14 @@ PlayerGUI::PlayerGUI()
     addAndMakeVisible(playButton);
     addAndMakeVisible(stopButton);
     addAndMakeVisible(restartButton);
+    addAndMakeVisible(loopToggle);      // make loop toggle visible
     addAndMakeVisible(volumeSlider);
 
     loadButton.addListener(this);
     playButton.addListener(this);
     stopButton.addListener(this);
     restartButton.addListener(this);
+    loopToggle.addListener(this);       // listen for loop toggle changes
     volumeSlider.addListener(this);
 
     volumeSlider.setRange(0.0, 1.0, 0.01);
@@ -37,12 +39,16 @@ void PlayerGUI::releaseResources()
 
 void PlayerGUI::resized()
 {
-    auto area = getLocalBounds().reduced(10);
-    loadButton.setBounds(area.removeFromTop(30));
-    playButton.setBounds(area.removeFromTop(30));
-    stopButton.setBounds(area.removeFromTop(30));
-    restartButton.setBounds(area.removeFromTop(30));
-    volumeSlider.setBounds(area.removeFromTop(40));
+    auto area = getLocalBounds().reduced(8);
+
+    auto top = area.removeFromTop(30);
+    loadButton.setBounds(top.removeFromLeft(100).reduced(2));
+    playButton.setBounds(top.removeFromLeft(100).reduced(2));
+    stopButton.setBounds(top.removeFromLeft(100).reduced(2));
+    restartButton.setBounds(top.removeFromLeft(100).reduced(2));
+    loopToggle.setBounds(top.removeFromLeft(80).reduced(2));
+
+    volumeSlider.setBounds(area.removeFromTop(40).reduced(2));
 }
 
 void PlayerGUI::buttonClicked(juce::Button* button)
@@ -55,15 +61,29 @@ void PlayerGUI::buttonClicked(juce::Button* button)
             {
                 auto file = fc.getResult();
                 if (file.existsAsFile())
-                    playerAudio.loadFile(file);
+                {
+                    bool ok = playerAudio.loadFile(file);
+                    // optional: you can update UI (enable play button) based on ok
+                }
             });
     }
     else if (button == &playButton)
+    {
         playerAudio.play();
+    }
     else if (button == &stopButton)
+    {
         playerAudio.stop();
+    }
     else if (button == &restartButton)
+    {
         playerAudio.restart();
+    }
+    else if (button == &loopToggle)
+    {
+        bool shouldLoop = loopToggle.getToggleState();
+        playerAudio.setLooping(shouldLoop);
+    }
 }
 
 void PlayerGUI::sliderValueChanged(juce::Slider* slider)
