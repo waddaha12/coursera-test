@@ -27,12 +27,26 @@ void PlayerAudio::releaseResources()
 
 bool PlayerAudio::loadFile(const juce::File& file)
 {
-    auto* reader = formatManager.createReaderFor(file);
+    // Clear any existing source first
+    transportSource.stop();
+    transportSource.setSource(nullptr);
+    loopingSource.reset();
+    readerSource.reset();
 
+    auto* reader = formatManager.createReaderFor(file);
     if (reader != nullptr)
     {
-        readerSource.reset(new juce::AudioFormatReaderSource(reader, true));
-        transportSource.setSource(readerSource.get(), 0, nullptr, reader->sampleRate);
+        // Create an AudioFormatReaderSource (owns the reader), then wrap it by LoopingAudioSource.
+        // Note: We create with new and transfer ownership to unique_ptrs properly.
+        auto* afrSource = new juce::AudioFormatReaderSource(reader, true);
+        readerSource.reset(static_cast<juce::PositionableAudioSource*>(afrSource));
+
+        // LoopingAudioSource takes an AudioSource*; setting deleteWhenRemoved = true
+        loopingSource.reset(new juce::LoopingAudioSource(afrSource, true));
+        loopingSource->setLooping(loopingEnabled);
+
+        // Connect looping source to transport
+        transportSource.setSource(loopingSource.get(), 0, nullptr, reader->sampleRate);
         return true;
     }
     return false;
@@ -65,4 +79,16 @@ void PlayerAudio::setPosition(double pos)
 double PlayerAudio::getLength() const
 {
     return transportSource.getLengthInSeconds();
+}
+
+void PlayerAudio::setLooping(bool shouldLoop)
+{
+    loopingEnabled = shouldLoop;
+    if (loopingSource)
+        loopingSource->setLooping(shouldLoop);
+}
+
+bool PlayerAudio::isLooping() const
+{
+    return loopingEnabled;
 }
