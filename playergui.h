@@ -23,6 +23,10 @@ private:
     juce::TextButton playButton{ "Play" };
     juce::TextButton stopButton{ "Stop" };
     juce::TextButton restartButton{ "Restart" };
+
+    // NEW: Loop toggle button
+    juce::ToggleButton loopToggle{ "Loop" };
+
     juce::Slider volumeSlider;
 
     std::unique_ptr<juce::FileChooser> chooser;
